@@ -1,4 +1,4 @@
-package models;
+package main.models;
 
 import java.time.LocalDate;
 
@@ -29,6 +29,10 @@ public class Rental {
         private LocalDate endDate;
         private double pricePerDay;
         private double totalPrice;
+
+        public static Builder builder(){
+            return new Builder();
+        }
 
         /**
          * Sets the car for this rental.
@@ -115,5 +119,54 @@ public class Rental {
                 ", pricePerDay=" + pricePerDay +
                 ", totalPrice=" + totalPrice +
                 '}';
+    }
+
+
+    public Car getCar() {
+        return car;
+    }
+
+    public void setCar(Car car) {
+        this.car = car;
+    }
+
+    public Renter getRenter() {
+        return renter;
+    }
+
+    public void setRenter(Renter renter) {
+        this.renter = renter;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public double getPricePerDay() {
+        return pricePerDay;
+    }
+
+    public void setPricePerDay(double pricePerDay) {
+        this.pricePerDay = pricePerDay;
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(double totalPrice) {
+        this.totalPrice = totalPrice;
     }
 }

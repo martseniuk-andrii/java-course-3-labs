@@ -1,11 +1,11 @@
-package models;
+package main.models;
 
 import java.util.Objects;
 
 /**
  * Represents a car available for rent.
  */
-public class Car {
+public class Car implements Comparable<Car>{
     private String make;
     private String vin;
     private String licensePlate;
@@ -57,5 +57,50 @@ public class Car {
     @Override
     public int hashCode() {
         return Objects.hash(make, vin, licensePlate, yearOfManufacture, mileage);
+    }
+
+    @Override
+    public int compareTo(Car otherCar) {
+        return Integer.compare(this.yearOfManufacture, otherCar.yearOfManufacture);
+    }
+
+    public String getMake() {
+        return make;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
+    }
+
+    public String getVin() {
+        return vin;
+    }
+
+    public void setVin(String vin) {
+        this.vin = vin;
+    }
+
+    public String getLicensePlate() {
+        return licensePlate;
+    }
+
+    public void setLicensePlate(String licensePlate) {
+        this.licensePlate = licensePlate;
+    }
+
+    public int getYearOfManufacture() {
+        return yearOfManufacture;
+    }
+
+    public void setYearOfManufacture(int yearOfManufacture) {
+        this.yearOfManufacture = yearOfManufacture;
+    }
+
+    public int getMileage() {
+        return mileage;
+    }
+
+    public void setMileage(int mileage) {
+        this.mileage = mileage;
     }
 }
