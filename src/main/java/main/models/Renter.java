@@ -11,6 +11,8 @@ public class Renter {
     private String idDocument;
     private String driverLicense;
 
+    public Renter(){}
+
     /**
      * Constructs a renter with the specified details.
      *

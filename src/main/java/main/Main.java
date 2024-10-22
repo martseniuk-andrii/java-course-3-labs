@@ -5,48 +5,34 @@ import main.exceptions.CarNotFoundException;
 import main.models.Car;
 import main.models.Rental;
 import main.models.Renter;
+import main.serializers.IEntitySerializer;
+import main.serializers.impl.JsonEntitySerializer;
+import main.serializers.impl.XmlEntitySerializer;
+import main.serializers.impl.YamlEntitySerializer;
 import main.services.RentalService;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         RentalService rentalService = new RentalService();
 
-        List<Car> cars = Arrays.asList(
-                new Car("Toyota", "VIN1", "ABC123", 2010, 120000),
-                new Car("Honda", "VIN2", "DEF456", 2015, 90000),
-                new Car("Ford", "VIN3", "GHI789", 2005, 150000)
-        );
+        File carsDataFile = Paths.get("./data/cars.yaml").toFile();
+        File renterDataFile = Paths.get("./data/renter.xml").toFile();
+        File rentalsDataFile = Paths.get("./data/rental.json").toFile();
 
-        // Створення об'єктів Renter
-        List<Renter> renters = Arrays.asList(
-                new Renter("John", "Doe", "ID123", "DL123"),
-                new Renter("Alice", "Smith", "ID456", "DL456"),
-                new Renter("Bob", "Brown", "ID789", "DL789")
-        );
-
-
-        List<Rental> rentals = new ArrayList<>();
-
-        for (Renter renter : renters) {
-            Car freeCar = rentalService.getOneFreeCar(cars, rentals);
-            if (freeCar == null) {
-                throw new CarNotFoundException("Free car not found");
-            }
-            rentals.add(
-                    Rental.Builder.builder()
-                            .setCar(freeCar)
-                            .setRenter(renter)
-                            .setPricePerDay(200.0)
-                            .setStartDate(LocalDate.now())
-                            .setEndDate(LocalDate.now().plusDays(3))
-                            .build()
-            );
-        }
+        IEntitySerializer<Car> carsSerializer = new YamlEntitySerializer<>();
+        IEntitySerializer<Renter> rentersSerializer = new XmlEntitySerializer<>();
+        IEntitySerializer<Rental> rentalsSerializer = new JsonEntitySerializer<>();
+        List<Renter> renters = Arrays.stream(rentersSerializer.deserializeArray(renterDataFile, Renter[].class)).collect(Collectors.toList());
+        List<Car> cars = Arrays.stream(carsSerializer.deserializeArray(carsDataFile, Car[].class)).collect(Collectors.toList());
+        List<Rental> rentals = Arrays.stream(rentalsSerializer.deserializeArray(rentalsDataFile, Rental[].class)).collect(Collectors.toList());
 
 
         System.out.println("Rentals" + rentals);
@@ -67,5 +53,10 @@ public class Main {
         RenterFirstNameComparator firstNameComparator = new RenterFirstNameComparator();
         renters.sort(firstNameComparator);
         System.out.println("Sorted renters by first name: " + renters);
+
+        carsSerializer.serializeArray(cars.toArray(new Car[]{}), carsDataFile);
+        rentersSerializer.serializeArray(renters.toArray(new Renter[]{}), renterDataFile);
+        rentalsSerializer.serializeArray( rentals.toArray(new Rental[]{}), rentalsDataFile);
+        System.out.println("all ok");
     }
 }

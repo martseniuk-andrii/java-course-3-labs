@@ -1,0 +1,16 @@
+---
+- make: "Toyota"
+  vin: "VIN1"
+  licensePlate: "ABC123"
+  yearOfManufacture: 2010
+  mileage: 120000
+- make: "Honda"
+  vin: "VIN2"
+  licensePlate: "DEF456"
+  yearOfManufacture: 2015
+  mileage: 90000
+- make: "Ford"
+  vin: "VIN3"
+  licensePlate: "GHI789"
+  yearOfManufacture: 2005
+  mileage: 150000

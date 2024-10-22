@@ -12,6 +12,9 @@ public class Car implements Comparable<Car>{
     private int yearOfManufacture;
     private int mileage;
 
+
+    public Car(){}
+
     /**
      * Constructs a car with the specified details.
      *

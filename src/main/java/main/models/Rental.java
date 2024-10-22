@@ -13,6 +13,9 @@ public class Rental {
     private double pricePerDay;
     private double totalPrice;
 
+    public Rental(){}
+
+
     private Rental(Builder builder) {
         this.car = builder.car;
         this.renter = builder.renter;
