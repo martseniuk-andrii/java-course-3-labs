@@ -1,19 +1,100 @@
 package main.models;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.constraints.*;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a car available for rent.
  */
 public class Car implements Comparable<Car>{
+    @NotNull
     private String make;
+
+    @NotNull
     private String vin;
+
+    @NotNull
     private String licensePlate;
+
+    @NotNull
+    @Min(value = 1900)
     private int yearOfManufacture;
+
+    @Min(value = 0)
     private int mileage;
 
 
     public Car(){}
+
+    private Car(Builder builder) {
+        this.make = builder.make;
+        this.vin = builder.vin;
+        this.licensePlate = builder.licensePlate;
+        this.yearOfManufacture = builder.yearOfManufacture;
+        this.mileage = builder.mileage;
+    }
+
+
+    public static class Builder {
+        private String make;
+        private String vin;
+        private String licensePlate;
+        private int yearOfManufacture;
+        private int mileage;
+
+        public static Builder builder(){
+            return new Builder();
+        }
+
+        public Builder(){}
+
+
+        public Builder setMake(String make) {
+            this.make = make;
+            return this;
+        }
+
+        public Builder setVin(String vin) {
+            this.vin = vin;
+            return this;
+        }
+
+        public Builder setLicensePlate(String licensePlate) {
+            this.licensePlate = licensePlate;
+            return this;
+        }
+
+        public Builder setYearOfManufacture(int yearOfManufacture) {
+            this.yearOfManufacture = yearOfManufacture;
+            return this;
+        }
+
+        public Builder setMileage(int mileage) {
+            this.mileage = mileage;
+            return this;
+        }
+
+        public Car build() {
+            Car car = new Car(this);
+            Set<ConstraintViolation<Car>> validate = Validation.buildDefaultValidatorFactory().getValidator().validate(car);
+
+            if (!validate.isEmpty()) {
+                throw new  IllegalArgumentException(
+                        validate.stream()
+                                .map(rentalConstraintViolation -> {
+                                    String fieldName = rentalConstraintViolation.getPropertyPath().toString().toUpperCase();
+                                    return fieldName + " " + rentalConstraintViolation.getMessage();
+                                }).collect(Collectors.joining(", "))
+                );
+            }
+
+            return car;
+        }
+    }
 
     /**
      * Constructs a car with the specified details.

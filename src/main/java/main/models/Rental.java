@@ -1,16 +1,33 @@
 package main.models;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a car rental transaction.
  */
 public class Rental {
+    @NotNull
     private Car car;
+
+    @NotNull
     private Renter renter;
+
+    @NotNull
     private LocalDate startDate;
+
+    @NotNull
     private LocalDate endDate;
+
+    @Min(0)
     private double pricePerDay;
+
+    @Min(0)
     private double totalPrice;
 
     public Rental(){}
@@ -43,7 +60,7 @@ public class Rental {
          * @param car the car being rented
          * @return the Builder instance
          */
-        public Builder setCar(Car car) {
+        public Builder setCar( Car car) {
             this.car = car;
             return this;
         }
@@ -54,7 +71,7 @@ public class Rental {
          * @param renter the person renting the car
          * @return the Builder instance
          */
-        public Builder setRenter(Renter renter) {
+        public Builder setRenter( Renter renter) {
             this.renter = renter;
             return this;
         }
@@ -65,7 +82,7 @@ public class Rental {
          * @param startDate the start date of the rental period
          * @return the Builder instance
          */
-        public Builder setStartDate(LocalDate startDate) {
+        public Builder setStartDate( LocalDate startDate) {
             this.startDate = startDate;
             return this;
         }
@@ -76,7 +93,7 @@ public class Rental {
          * @param endDate the end date of the rental period
          * @return the Builder instance
          */
-        public Builder setEndDate(LocalDate endDate) {
+        public Builder setEndDate( LocalDate endDate) {
             this.endDate = endDate;
             return this;
         }
@@ -108,7 +125,20 @@ public class Rental {
          * @return a new Rental instance
          */
         public Rental build() {
-            return new Rental(this);
+            Rental rental = new Rental(this);
+            Set<ConstraintViolation<Rental>> validate = Validation.buildDefaultValidatorFactory().getValidator().validate(rental);
+
+            if (!validate.isEmpty()) {
+                throw new  IllegalArgumentException(
+                        validate.stream()
+                                .map(rentalConstraintViolation -> {
+                                    String fieldName = rentalConstraintViolation.getPropertyPath().toString().toUpperCase();
+                                    return fieldName + " " + rentalConstraintViolation.getMessage();
+                                }).collect(Collectors.joining(", "))
+                );
+            }
+
+            return rental;
         }
     }
 

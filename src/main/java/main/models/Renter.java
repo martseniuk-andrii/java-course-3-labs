@@ -1,17 +1,86 @@
 package main.models;
 
+import main.validation.IdDocumentExists;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.constraints.NotNull;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a person who rents a car.
  */
 public class Renter {
+    @NotNull
     private String firstName;
+    @NotNull
     private String lastName;
+    @NotNull
+    @IdDocumentExists
     private String idDocument;
+    @NotNull
     private String driverLicense;
 
-    public Renter(){}
+    public Renter(){
+    }
+
+    private Renter(Builder builder) {
+        this.firstName = builder.firstName;
+        this.lastName = builder.lastName;
+        this.idDocument = builder.idDocument;
+        this.driverLicense = builder.driverLicense;
+    }
+    public static class Builder {
+        private String firstName;
+        private String lastName;
+        private String idDocument;
+        private String driverLicense;
+
+        public static Builder builder(){
+            return new Builder();
+        }
+
+        public Builder(){}
+
+        public Builder setFirstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        public Builder setLastName(String lastName) {
+            this.lastName = lastName;
+            return this;
+        }
+
+        public Builder setIdDocument(String idDocument) {
+            this.idDocument = idDocument;
+            return this;
+        }
+
+        public Builder setDriverLicense(String driverLicense) {
+            this.driverLicense = driverLicense;
+            return this;
+        }
+
+        public Renter build() {
+            Renter renter = new Renter(this);
+            Set<ConstraintViolation<Renter>> validate = Validation.buildDefaultValidatorFactory().getValidator().validate(renter);
+
+            if (!validate.isEmpty()) {
+                throw new  IllegalArgumentException(
+                        validate.stream()
+                                .map(rentalConstraintViolation -> {
+                                    String fieldName = rentalConstraintViolation.getPropertyPath().toString().toUpperCase();
+                                    return fieldName + " " + rentalConstraintViolation.getMessage();
+                                }).collect(Collectors.joining(", "))
+                );
+            }
+
+            return renter;
+        }
+    }
 
     /**
      * Constructs a renter with the specified details.

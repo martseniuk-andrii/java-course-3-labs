@@ -14,3 +14,13 @@
   licensePlate: "GHI789"
   yearOfManufacture: 2005
   mileage: 150000
+- make: "123"
+  vin: "123123"
+  licensePlate: "asdasasd"
+  yearOfManufacture: 1800
+  mileage: -1
+- make: "123"
+  vin: "123123"
+  licensePlate: "asdasasd"
+  yearOfManufacture: 1800
+  mileage: -1

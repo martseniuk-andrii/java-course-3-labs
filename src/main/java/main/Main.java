@@ -30,10 +30,28 @@ public class Main {
         IEntitySerializer<Car> carsSerializer = new YamlEntitySerializer<>();
         IEntitySerializer<Renter> rentersSerializer = new XmlEntitySerializer<>();
         IEntitySerializer<Rental> rentalsSerializer = new JsonEntitySerializer<>();
+        //data loaded
         List<Renter> renters = Arrays.stream(rentersSerializer.deserializeArray(renterDataFile, Renter[].class)).collect(Collectors.toList());
         List<Car> cars = Arrays.stream(carsSerializer.deserializeArray(carsDataFile, Car[].class)).collect(Collectors.toList());
         List<Rental> rentals = Arrays.stream(rentalsSerializer.deserializeArray(rentalsDataFile, Rental[].class)).collect(Collectors.toList());
+//        cars.add(
+//                Car.Builder.builder()
+//                        .setMake("asdasd")
+//                        .setMileage(-1)  //error here
+//                        .setLicensePlate("asdas")
+//                        .setVin("123sdfsdf")
+//                        .setYearOfManufacture(1899)  //error here
+//                        .build()
+//        );
 
+        renters.add(
+                Renter.Builder.builder()
+                        .setDriverLicense("DL:asdsadasd")
+                        .setIdDocument("test123") // invalid id document
+                        .setLastName("Abum")
+                        .setFirstName("Kek")
+                        .build()
+        );
 
         System.out.println("Rentals" + rentals);
 
