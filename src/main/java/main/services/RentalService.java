@@ -51,20 +51,5 @@ public class RentalService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Return one free car or null
-     *
-     * @param cars the collection of cars
-     * @param rentals list of Rental
-     * @return a free car
-     */
-    public Car getOneFreeCar(List<Car> cars, List<Rental> rentals) {
-        for (Car car : cars) {
-            boolean isCarRented = rentals.stream().anyMatch(rental1 -> rental1.getCar().equals(car) && LocalDate.now().isBefore(rental1.getEndDate()));
-            if (!isCarRented){
-                return car;
-            }
-        }
-        return null;
-    }
+
 }

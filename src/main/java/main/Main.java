@@ -1,80 +1,81 @@
 package main;
 
-import main.comparators.RenterFirstNameComparator;
-import main.exceptions.CarNotFoundException;
+
 import main.models.Car;
-import main.models.Rental;
-import main.models.Renter;
-import main.serializers.IEntitySerializer;
-import main.serializers.impl.JsonEntitySerializer;
-import main.serializers.impl.XmlEntitySerializer;
-import main.serializers.impl.YamlEntitySerializer;
-import main.services.RentalService;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-        RentalService rentalService = new RentalService();
+    public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException {
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection("jdbc:sqlite:sample.db");
 
-        File carsDataFile = Paths.get("./data/cars.yaml").toFile();
-        File renterDataFile = Paths.get("./data/renter.xml").toFile();
-        File rentalsDataFile = Paths.get("./data/rental.json").toFile();
 
-        IEntitySerializer<Car> carsSerializer = new YamlEntitySerializer<>();
-        IEntitySerializer<Renter> rentersSerializer = new XmlEntitySerializer<>();
-        IEntitySerializer<Rental> rentalsSerializer = new JsonEntitySerializer<>();
-        //data loaded
-        List<Renter> renters = Arrays.stream(rentersSerializer.deserializeArray(renterDataFile, Renter[].class)).collect(Collectors.toList());
-        List<Car> cars = Arrays.stream(carsSerializer.deserializeArray(carsDataFile, Car[].class)).collect(Collectors.toList());
-        List<Rental> rentals = Arrays.stream(rentalsSerializer.deserializeArray(rentalsDataFile, Rental[].class)).collect(Collectors.toList());
-//        cars.add(
-//                Car.Builder.builder()
-//                        .setMake("asdasd")
-//                        .setMileage(-1)  //error here
-//                        .setLicensePlate("asdas")
-//                        .setVin("123sdfsdf")
-//                        .setYearOfManufacture(1899)  //error here
-//                        .build()
-//        );
+            if (conn == null) {
+                System.out.println("DB connection failed");
+                System.exit(0);
+            }
 
-        renters.add(
-                Renter.Builder.builder()
-                        .setDriverLicense("DL:asdsadasd")
-                        .setIdDocument("test123") // invalid id document
-                        .setLastName("Abum")
-                        .setFirstName("Kek")
-                        .build()
-        );
+            // init database
+            {
+                String sql = new String(Files.readAllBytes(Paths.get("./database.sql")));
+                String[] sqlStatements = sql.split(";");
 
-        System.out.println("Rentals" + rentals);
+                try (Statement stmt = conn.createStatement()) {
+                    for (String command : sqlStatements) {
+                        // Удаляем лишние пробелы и выполняем команду, если она не пустая
+                        if (!command.trim().isEmpty()) {
+                            stmt.execute(command.trim());
+                        }
+                    }
+                    System.out.println("Database tables created successfully.");
+                }
+            }
 
-        // 1. Знаходження машини з найбільшим пробігом
-        Car carWithHighestMileage = rentalService.findCarWithHighestMileage(cars);
-        System.out.println("Car with the highest mileage: " + carWithHighestMileage);
+            {
+                Random rand = new Random();
+                Car car = Car.Builder.builder()
+                        .setYearOfManufacture(1901)
+                        .setLicensePlate("LP:"+rand.nextInt(100000))
+                        .setMake("Ukraine")
+                        .setVin("test:"+rand.nextInt(100000))
+                        .build();
 
-        // 2. Сортування рентерів за прізвищем
-        List<Renter> sortedRenters = rentalService.sortRentersByLastName(renters);
-        System.out.println("Sorted renters by last name: " + sortedRenters);
+                car.save(conn);
+                System.out.println("Car created successfully. "+ car);
+                car.setMake("Anime 227"+rand.nextInt(100000));
+                car.save(conn);
+                System.out.println("Car updated successfully. "+ car);
+            }
 
-        // 3. Пошук машин, старіших за 10 років
-        List<Car> oldCars = rentalService.getCarsOlderThan(cars, 10);
-        System.out.println("Cars older than 10 years: " + oldCars);
+            {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM car");
 
-        // 4. Сортування рентерів за ім'ям за допомогою Comparator
-        RenterFirstNameComparator firstNameComparator = new RenterFirstNameComparator();
-        renters.sort(firstNameComparator);
-        System.out.println("Sorted renters by first name: " + renters);
+                ArrayList<Car> cars = new ArrayList<>();
+                while (rs.next()) {
+                    cars.add(new Car(rs));
+                }
+                System.out.println(cars);
 
-        carsSerializer.serializeArray(cars.toArray(new Car[]{}), carsDataFile);
-        rentersSerializer.serializeArray(renters.toArray(new Renter[]{}), renterDataFile);
-        rentalsSerializer.serializeArray( rentals.toArray(new Rental[]{}), rentalsDataFile);
-        System.out.println("all ok");
+                stmt.close();
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        } finally{
+            if (conn != null){
+                conn.close();
+            }
+        }
+
     }
 }

@@ -3,6 +3,7 @@ package main.models;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.constraints.*;
+import java.sql.*;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,7 +11,9 @@ import java.util.stream.Collectors;
 /**
  * Represents a car available for rent.
  */
-public class Car implements Comparable<Car>{
+public class Car implements Comparable<Car>, ISavable<Car> {
+    private Integer id;
+
     @NotNull
     private String make;
 
@@ -28,7 +31,53 @@ public class Car implements Comparable<Car>{
     private int mileage;
 
 
-    public Car(){}
+    public Car save(Connection conn) throws SQLException {
+        if (this.id == null) {
+            try (PreparedStatement ps = conn.prepareStatement("insert into car (make, vin, license_plate, year_of_manufacture, mileage) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS)) {
+                System.out.println(make + vin + licensePlate + yearOfManufacture + mileage);
+
+                ps.setString(1, make);
+                ps.setString(2, vin);
+                ps.setString(3, licensePlate);
+                ps.setInt(4, yearOfManufacture);
+                ps.setInt(5, mileage);
+                ps.execute();
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        this.id = id;
+                        return this;
+                   } else {
+                        throw new SQLException("Failed to insert new  car");
+                    }
+                }
+            }
+        } else {
+            try (PreparedStatement ps = conn.prepareStatement("update car set make = ?, vin = ?, license_plate = ?, year_of_manufacture= ?, mileage = ? where id = ?")) {
+                ps.setString(1, make);
+                ps.setString(2, vin);
+                ps.setString(3, licensePlate);
+                ps.setInt(4, yearOfManufacture);
+                ps.setInt(5, mileage);
+                ps.setInt(6, id);
+                ps.executeUpdate();
+                return this;
+            }
+
+        }
+    }
+
+    public Car() {
+    }
+
+    public Car(ResultSet rs) throws SQLException {
+        this.id = rs.getInt("id");
+        this.make = rs.getString("make");
+        this.vin = rs.getString("vin");
+        this.licensePlate = rs.getString("license_plate");
+        this.yearOfManufacture = rs.getInt("year_of_manufacture");
+        this.mileage = rs.getInt("mileage");
+    }
 
     private Car(Builder builder) {
         this.make = builder.make;
@@ -46,11 +95,12 @@ public class Car implements Comparable<Car>{
         private int yearOfManufacture;
         private int mileage;
 
-        public static Builder builder(){
+        public static Builder builder() {
             return new Builder();
         }
 
-        public Builder(){}
+        public Builder() {
+        }
 
 
         public Builder setMake(String make) {
@@ -83,7 +133,7 @@ public class Car implements Comparable<Car>{
             Set<ConstraintViolation<Car>> validate = Validation.buildDefaultValidatorFactory().getValidator().validate(car);
 
             if (!validate.isEmpty()) {
-                throw new  IllegalArgumentException(
+                throw new IllegalArgumentException(
                         validate.stream()
                                 .map(rentalConstraintViolation -> {
                                     String fieldName = rentalConstraintViolation.getPropertyPath().toString().toUpperCase();
@@ -99,11 +149,11 @@ public class Car implements Comparable<Car>{
     /**
      * Constructs a car with the specified details.
      *
-     * @param make the make (brand) of the car
-     * @param vin the VIN code of the car
-     * @param licensePlate the license plate number of the car
+     * @param make              the make (brand) of the car
+     * @param vin               the VIN code of the car
+     * @param licensePlate      the license plate number of the car
      * @param yearOfManufacture the year the car was manufactured
-     * @param mileage the current mileage of the car
+     * @param mileage           the current mileage of the car
      */
     public Car(String make, String vin, String licensePlate, int yearOfManufacture, int mileage) {
         this.make = make;
@@ -118,6 +168,7 @@ public class Car implements Comparable<Car>{
     @Override
     public String toString() {
         return "Car{" +
+                "id=" + id +
                 "make='" + make + '\'' +
                 ", vin='" + vin + '\'' +
                 ", licensePlate='" + licensePlate + '\'' +
@@ -136,6 +187,10 @@ public class Car implements Comparable<Car>{
                 Objects.equals(make, car.make) &&
                 Objects.equals(vin, car.vin) &&
                 Objects.equals(licensePlate, car.licensePlate);
+    }
+
+    public Integer getId() {
+        return id;
     }
 
     @Override

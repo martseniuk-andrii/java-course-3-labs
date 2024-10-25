@@ -4,6 +4,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -11,12 +12,15 @@ import java.util.stream.Collectors;
 /**
  * Represents a car rental transaction.
  */
-public class Rental {
-    @NotNull
-    private Car car;
+public class Rental implements ISavable<Rental>{
+
+    private Integer id;
 
     @NotNull
-    private Renter renter;
+    public Integer carId;
+
+    @NotNull
+    public Integer renterId;
 
     @NotNull
     private LocalDate startDate;
@@ -33,22 +37,68 @@ public class Rental {
     public Rental(){}
 
 
+    public Rental save(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            if (this.id != null) {
+                PreparedStatement ps = conn.prepareStatement("update rental set car_id = ?, renter_id = ?, start_date = ?, end_date = ?, price_per_day =?, total_price = ? where id = ?");
+                ps.setInt(1, this.carId);
+                ps.setInt(2, this.renterId);
+                ps.setString(3, this.startDate.toString());
+                ps.setString(4, this.endDate.toString());
+                ps.setDouble(5, this.pricePerDay);
+                ps.setDouble(6, this.totalPrice);
+                ps.setInt(7, this.id);
+                ps.executeUpdate();
+
+            } else {
+                PreparedStatement ps = conn.prepareStatement("insert into rental (car_id, renter_id, start_date, end_date, price_per_day, total_price) VALUES (?, ?, ?, ?, ?, ?) returning id");
+                ps.setInt(1, this.carId);
+                ps.setInt(2, this.renterId);
+                ps.setString(3, this.startDate.toString());
+                ps.setString(4, this.endDate.toString());
+                ps.setDouble(5, this.pricePerDay);
+                ps.setDouble(6, this.totalPrice);
+                int affectedRows = ps.executeUpdate();
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        this.id = id;
+                        return this;
+                    } else {
+                        throw new SQLException("Failed to insert new  car");
+                    }
+                }
+            }
+        }
+        throw new SQLException("Failed to save car");
+    }
+
+    public Rental(ResultSet rs) throws SQLException {
+        this.id = rs.getInt("id");
+        this.carId = rs.getInt("car_id");
+        this.renterId = rs.getInt("renter_id");
+        this.startDate = LocalDate.parse(rs.getString("start_date"));
+        this.endDate = LocalDate.parse(rs.getString("end_date"));
+        this.pricePerDay = rs.getDouble("price_per_day");
+        this.totalPrice = rs.getDouble("total_price");
+    }
+
     private Rental(Builder builder) {
-        this.car = builder.car;
-        this.renter = builder.renter;
         this.startDate = builder.startDate;
         this.endDate = builder.endDate;
         this.pricePerDay = builder.pricePerDay;
         this.totalPrice = builder.totalPrice;
+        this.renterId = builder.renterId;
+        this.carId = builder.carId;
     }
 
     public static class Builder {
-        private Car car;
-        private Renter renter;
         private LocalDate startDate;
         private LocalDate endDate;
         private double pricePerDay;
         private double totalPrice;
+        private Integer carId;
+        private Integer renterId;
 
         public static Builder builder(){
             return new Builder();
@@ -57,22 +107,17 @@ public class Rental {
         /**
          * Sets the car for this rental.
          *
-         * @param car the car being rented
+         * @param carId the carId being rented
          * @return the Builder instance
          */
-        public Builder setCar( Car car) {
-            this.car = car;
+        public Builder setCarId( Integer carId) {
+            this.carId = carId;
             return this;
         }
 
-        /**
-         * Sets the renter for this rental.
-         *
-         * @param renter the person renting the car
-         * @return the Builder instance
-         */
-        public Builder setRenter( Renter renter) {
-            this.renter = renter;
+
+        public Builder setRenterId( Integer renterId) {
+            this.renterId = renterId;
             return this;
         }
 
@@ -145,8 +190,9 @@ public class Rental {
     @Override
     public String toString() {
         return "Rental{" +
-                "car=" + car +
-                ", renter=" + renter +
+                "id=" + id +
+                ", carId=" + carId +
+                ", renterId=" + renterId +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", pricePerDay=" + pricePerDay +
@@ -154,21 +200,25 @@ public class Rental {
                 '}';
     }
 
-
-    public Car getCar() {
-        return car;
+    public Integer getId() {
+        return id;
     }
 
-    public void setCar(Car car) {
-        this.car = car;
+    public Integer getCarId() {
+        return carId;
     }
 
-    public Renter getRenter() {
-        return renter;
+    public void setCarId(Integer carId) {
+        this.carId = carId;
     }
 
-    public void setRenter(Renter renter) {
-        this.renter = renter;
+
+    public Integer getRenterId() {
+        return renterId;
+    }
+
+    public void setRenterId(Integer renterId) {
+        this.renterId = renterId;
     }
 
     public LocalDate getStartDate() {

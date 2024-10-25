@@ -5,6 +5,8 @@ import main.validation.IdDocumentExists;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.sql.*;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,7 +14,9 @@ import java.util.stream.Collectors;
 /**
  * Represents a person who rents a car.
  */
-public class Renter {
+public class Renter implements ISavable<Renter> {
+    private Integer id;
+
     @NotNull
     private String firstName;
     @NotNull
@@ -24,6 +28,44 @@ public class Renter {
     private String driverLicense;
 
     public Renter(){
+    }
+
+    public Renter save(Connection conn) throws SQLException {
+        if (this.id == null) {
+            try(PreparedStatement ps = conn.prepareStatement("insert into renter (first_name, last_name, id_document, driver_license) values (?, ?, ?, ?) returning id")){
+                ps.setString(1, this.firstName);
+                ps.setString(2, this.lastName);
+                ps.setString(3, this.idDocument);
+                ps.setString(4, this.driverLicense);
+                ps.executeUpdate();
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        this.id = id;
+                        return this;
+                    } else {
+                        throw new SQLException("Failed to insert new  renter");
+                    }
+                }
+            }
+        } else {
+            try(PreparedStatement ps = conn.prepareStatement("update renter set first_name = ?, last_name = ?, id_document = ?, driver_license = ? where id = ?")){
+                ps.setString(1, this.firstName);
+                ps.setString(2, this.lastName);
+                ps.setString(3, this.idDocument);
+                ps.setString(4, this.driverLicense);
+                ps.setInt(5, this.id);
+                return this;
+            }
+        }
+    }
+
+    public Renter(ResultSet rs) throws SQLException {
+        this.id = rs.getInt("id");
+        this.firstName = rs.getString("first_name");
+        this.lastName = rs.getString("last_name");
+        this.idDocument = rs.getString("id_document");
+        this.driverLicense = rs.getString("driver_license");
     }
 
     private Renter(Builder builder) {
@@ -102,7 +144,8 @@ public class Renter {
     @Override
     public String toString() {
         return "Renter{" +
-                "firstName='" + firstName + '\'' +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", idDocument='" + idDocument + '\'' +
                 ", driverLicense='" + driverLicense + '\'' +
@@ -118,6 +161,10 @@ public class Renter {
                 Objects.equals(lastName, renter.lastName) &&
                 Objects.equals(idDocument, renter.idDocument) &&
                 Objects.equals(driverLicense, renter.driverLicense);
+    }
+
+    public Integer getId() {
+        return id;
     }
 
     @Override
